@@ -3,47 +3,94 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
     let inputTask = document.getElementById('new-task');
     let unfinishedTasks = document.getElementById('unfinished-tasks');
     let finishedTasks = document.getElementById('finished-tasks');
-    let finishedTasksArr = [];
-    let unfinishedTasksArr = [];
+    const todoStorageArray = [];
 
-    function createNewElement(task, finished) {
-        let listItem = document.createElement('li');
-        let checkbox = document.createElement('button');
+    unfinishedTasks.addEventListener('click', (e)=> {
+      e.stopPropagation();
+      e.preventDefault();
+      console.log(e.path)
+      if (e.path[2].id) {
+        if (e.path[1].classList.contains('delete')) {
+          let listItem = this.parentNode;
+          let ul = listItem.parentNode;  
+          ul.removeChild(listItem);
+          saveToLocalStorage();
+        } else {
+          e.path[0].innerText = 'check_box';
 
-        if(finished){
-            checkbox.className = "material-icons checkbox";
-            checkbox.innerHTML = "<i class='material-icons'>check_box</i>";
-        }else {
-            checkbox.className = "material-icons checkbox";
-            checkbox.innerHTML = "<i class='material-icons'>check_box_outline_blank</i>";
+          const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
+          todoModel.status = true;
+  
+          
+          finishedTasks.appendChild(e.path[2]);
+          saveToLocalStorage();
         }
+      }
+     
+    });
 
-        let label = document.createElement('label');
-        label.innerText = task;
-        let input = document.createElement('input');
-        input.type = "text";
-        input.value = task;
-        let saveText = document.createElement('input');
-        saveText.type = "submit";
-        saveText.value = "save";
-        let cancleText = document.createElement('input');
-        cancleText.type = "submit";
-        cancleText.value = "cancel";  
+    finishedTasks.addEventListener('click', (e)=> {
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (e.path[2].id) {
+         if (e.path[1].classList.contains('delete')) {
+        let listItem = this.parentNode;
+        let ul = listItem.parentNode;  
+        ul.removeChild(listItem);
+        saveToLocalStorage();
+      } else {
+        e.path[0].innerText = 'check_box_outline_blank';
+        unfinishedTasks.appendChild(e.path[2]);
+
+        const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
+        todoModel.status = false;
+        saveToLocalStorage();
+      }
         
-        let deleteButton = document.createElement('button');
-        deleteButton.className = "material-icons delete";
-        deleteButton.innerHTML = "<i class='material-icons'>✖</i>";
+      
+      }
+    });
 
-        listItem.appendChild(checkbox);
-        listItem.appendChild(label);
-        listItem.appendChild(input);
-        listItem.appendChild(saveText);
-        listItem.appendChild(cancleText);
-        listItem.appendChild(deleteButton);
-        editTask(listItem, cancleText, saveText);
-        return listItem;
-        load();
-       
+    // создание новых тасков
+    function createNewElement(todoInstance) {
+      let listItem = document.createElement('li');
+      listItem.id = todoInstance.id;
+
+      let checkbox = document.createElement('button');
+
+      if(todoInstance.status){
+          checkbox.className = "material-icons checkbox";
+          checkbox.innerHTML = "<i class='material-icons'>check_box</i>";
+      }else {
+          checkbox.className = "material-icons checkbox";
+          checkbox.innerHTML = "<i class='material-icons'>check_box_outline_blank</i>";
+      }
+
+      let label = document.createElement('label');
+      label.innerText = todoInstance.task;
+      let input = document.createElement('input');
+      input.type = "text";
+      input.value = todoInstance.task;
+      let saveText = document.createElement('input');
+      saveText.type = "submit";
+      saveText.value = "save";
+      let cancleText = document.createElement('input');
+      cancleText.type = "submit";
+      cancleText.value = "cancel";  
+      
+      let deleteButton = document.createElement('button');
+      deleteButton.className = "material-icons delete";
+      deleteButton.innerHTML = "<i class='material-icons'>✖</i>";
+
+      listItem.appendChild(checkbox);
+      listItem.appendChild(label);
+      listItem.appendChild(input);
+      listItem.appendChild(saveText);
+      listItem.appendChild(cancleText);
+      listItem.appendChild(deleteButton);
+      editTask(listItem, cancleText, saveText);
+      return listItem;     
     }
     //верхний прогрессбар
     function progresbarOne() {
@@ -109,24 +156,38 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
               }
     }
       
-    //ввод через клавиатуру
-    inputTask.addEventListener('keypress', function(e){
-        if (e.keyCode === 13) {
-            let listItem = createNewElement(inputTask.value, false);
-            unfinishedTasks.appendChild(listItem);
-            bindTaskEvents(listItem, finishTask)
-            inputTask.value = "";
+    function TodoListObj(text) {
+      this.task = text;
+      this.status = false;
+      this.id = Math.random().toString(16).substr(2, 9);
+    }
 
-            save();
+    //ввод через клавиатуру
+    inputTask.addEventListener('keypress', function(e) {
+        if (e.keyCode === 13) {
+          let todoInstance = new TodoListObj(inputTask.value);
+          let listItem = createNewElement(todoInstance);
+
+          todoStorageArray.push(todoInstance);
+          unfinishedTasks.appendChild(listItem);
+
+          inputTask.value = "";
+
+          saveToLocalStorage();
+         
         }
     });
 
-    //удаление таска
-    function deleteTask() {
-        let listItem = this.parentNode;
-        let ul = listItem.parentNode;
-        ul.removeChild(listItem);
-        save();
+    // //удаление таска
+    // function deleteTask() {
+    //     let listItem = this.parentNode;
+    //     let ul = listItem.parentNode;
+    //     ul.removeChild(listItem);
+    //     saveToLocalStorage();
+    // }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('todoStorage', JSON.stringify(todoStorageArray));
     }
 
     //редактирование тасков
@@ -134,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
         saveText.onclick = function (event) {
           event.srcElement.previousSibling.previousSibling.innerText = event.srcElement.previousSibling.value;
           liItem.classList.toggle('editMode');
-          save();
+          saveToLocalStorage();
         };
 
         cancleText.onclick = function() {
@@ -146,93 +207,30 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
         });
     }
 
-    //активация чекбокcа
-    function finishTask() {
-        let listItem = this.parentNode;
-        let checkbox = listItem.querySelector('button.checkbox');
-        
-        checkbox.className = "material-icons checkbox";
-        checkbox.innerHTML = "<i class='material-icons'>check_box</i>";
-        finishedTasks.appendChild(listItem);
-        bindTaskEvents(listItem, unfinishTask);
-        
-        save();
-    }
-
-    //активация чекбокcа
-    function unfinishTask() {
-        let listItem = this.parentNode;
-        let checkbox = listItem.querySelector('button.checkbox');
-        
-        checkbox.className = "material-icons checkbox";
-        checkbox.innerHTML = "<i class='material-icons'>check_box_outline_blank</i>";
-
-        unfinishedTasks.appendChild(listItem);
-        bindTaskEvents(listItem, finishTask)
-        
-        save();
-    }
-    //проверка нажатия
-    function bindTaskEvents(listItem, checkboxEvent) {
-        let checkbox = listItem.querySelector('button.checkbox');
-        let deleteButton = listItem.querySelector('button.delete');
-
-        checkbox.onclick = checkboxEvent;
-        deleteButton.onclick = deleteTask;
-    }
-
-    //сохранение данных
-    function save() {
-      unfinishedTasksArr.length = 0;
-      finishedTasksArr.length = 0;
-
-      for (let i = 0; i < unfinishedTasks.children.length; i++) {
-          unfinishedTasksArr.push(unfinishedTasks.children[i].getElementsByTagName('label')[0].innerText);
+    
+    
+    // загрузка данных
+    function load() {
+      const data = JSON.parse(localStorage.getItem('todoStorage'));
+  
+      if (data != null) {
+          data.forEach(task => {
+            let listItem = createNewElement(task);
+            if (task.status) {
+              finishedTasks.appendChild(listItem); 
+            } else {
+              unfinishedTasks.appendChild(listItem);              
+            }
+          });
+  
+          todoStorageArray.push(...data);
       }
-
-      for (let i = 0; i < finishedTasks.children.length; i++) {
-          finishedTasksArr.push(finishedTasks.children[i].getElementsByTagName('label')[0].innerText);
-      }
-
-      localStorage.removeItem('todo');
-      localStorage.setItem('todo', JSON.stringify({
-          unfinishedTasks: unfinishedTasksArr,
-          finishedTasks: finishedTasksArr
-      }));
 
       progresbarOne();
       progresbarTwo();
-   
-    }
-    // загрузка данных
-    function load(){
-
-        const data = JSON.parse(localStorage.getItem('todo'));
-      
-        if (data != null) {
-            data.unfinishedTasks.forEach(task => {
-                let listItem = createNewElement(task, false);
-                unfinishedTasks.appendChild(listItem);
-                bindTaskEvents(listItem, finishTask);
-            })
-            unfinishedTasksArr.push(...data.unfinishedTasks);
-
-            data.finishedTasks.forEach(task => {
-                let listItem = createNewElement(task, true);
-                finishedTasks.appendChild(listItem);
-                bindTaskEvents(listItem, unfinishTask);
-              
-            })
-
-            finishedTasksArr.push(...data.finishedTasks);
-        }
-
-        progresbarOne();
-        progresbarTwo();
     }
 
     load();
-  
 });
 
 
