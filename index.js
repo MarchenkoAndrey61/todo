@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
     let finishedTasksArr = [];
     let unfinishedTasksArr = [];
 
-    // создание новых тасков
     function createNewElement(task, finished) {
         let listItem = document.createElement('li');
         let checkbox = document.createElement('button');
