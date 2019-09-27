@@ -8,25 +8,25 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
     unfinishedTasks.addEventListener('click', (e)=> {
       e.stopPropagation();
       e.preventDefault();
-      console.log(e.path)
+      console.log('e.path',e.path);
       if (e.path[2].id) {
         if (e.path[1].classList.contains('delete')) {
-          let listItem = this.parentNode;
-          let ul = listItem.parentNode;  
-          ul.removeChild(listItem);
-          saveToLocalStorage();
+          let index = todoStorageArray.findIndex(todo => todo.id === e.path[2].id);
+          todoStorageArray.splice(index, 1);
+          unfinishedTasks.removeChild(e.path[2]);
         } else {
-          e.path[0].innerText = 'check_box';
-
-          const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
-          todoModel.status = true;
-  
-          
-          finishedTasks.appendChild(e.path[2]);
-          saveToLocalStorage();
+          if (e.path[1].classList.contains('checkbox')){
+            e.path[0].innerText = 'check_box';
+            const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
+            todoModel.status = true;
+            finishedTasks.appendChild(e.path[2]);
+          }
         }
+        
       }
-     
+      saveToLocalStorage(); 
+      progresbarOne();
+      progresbarTwo();
     });
 
     finishedTasks.addEventListener('click', (e)=> {
@@ -34,23 +34,34 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
       e.preventDefault();
 
       if (e.path[2].id) {
-         if (e.path[1].classList.contains('delete')) {
-        let listItem = this.parentNode;
-        let ul = listItem.parentNode;  
-        ul.removeChild(listItem);
-        saveToLocalStorage();
-      } else {
-        e.path[0].innerText = 'check_box_outline_blank';
-        unfinishedTasks.appendChild(e.path[2]);
+        if (e.path[1].classList.contains('delete')) {
+          let index = todoStorageArray.findIndex(todo => todo.id === e.path[2].id);
+          todoStorageArray.splice(index, 1);
+          finishedTasks.removeChild(e.path[2]);
+        } else {
+          if (e.path[1].classList.contains('checkbox')){
+            e.path[0].innerText = 'check_box_outline_blank';
 
-        const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
-        todoModel.status = false;
-        saveToLocalStorage();
+            const todoModel = todoStorageArray.find(todo => todo.id === e.path[2].id)
+            todoModel.status = false;  
+            unfinishedTasks.appendChild(e.path[2]);
+          }
+          
+        }
       }
-        
-      
-      }
+      saveToLocalStorage();
+      progresbarOne();
+      progresbarTwo();
     });
+
+
+      function deleteTask1(){
+        if (e.path[1].classList.contains('delete')) {
+          let index = todoStorageArray.findIndex(todo => todo.id === e.path[2].id);
+          todoStorageArray.splice(index, 1);
+          finishedTasks.removeChild(e.path[2]);
+      }
+    }
 
     // создание новых тасков
     function createNewElement(todoInstance) {
@@ -92,21 +103,25 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
       editTask(listItem, cancleText, saveText);
       return listItem;     
     }
-    //верхний прогрессбар
+
+  
     function progresbarOne() {
-        let sumOfLengthes = unfinishedTasksArr.length + finishedTasksArr.length;// common count arrays
-        let maxWidthFinished = (finishedTasksArr.length * 100) / sumOfLengthes; 
-        let maxWidthUnfinished = (unfinishedTasksArr.length * 100) / sumOfLengthes;
+
+        let filter = todoStorageArray.filter(function(todoInstance){return todoInstance.status === true}).length;
+        let unfilter = todoStorageArray.filter(function(todoInstance){return todoInstance.status === false}).length;
+        let sumOfLengthes = todoStorageArray.length;// common count arrays
+        let maxWidthFinished = (filter * 100) / sumOfLengthes; 
+        let maxWidthUnfinished = (unfilter * 100) / sumOfLengthes;
         let sumOfMaxWidth = maxWidthFinished + maxWidthUnfinished ;//100%
       
-        console.log('finishedTasksArr.length', finishedTasksArr.length);
+        console.log('finishedTasksArr.length', filter);
         console.log('sumOfMaxWidth', sumOfMaxWidth);
         console.log('sumOfLengthes',sumOfLengthes);
         console.log('maxWidthFinished', maxWidthFinished);
         console.log('maxWidthUnfinished', maxWidthUnfinished);
 
         let elem = document.getElementById('green');
-        let width = finishedTasksArr.length ; // элементы в списке дел
+        let width = filter ; // элементы в списке дел
         let styleMaxWidth = document.getElementById('progres-green');
         width = Math.ceil(width);
 
@@ -127,34 +142,39 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
     }
     //нижний прогрессбар
     function progresbarTwo() {
-          let sumOfLengthes = unfinishedTasksArr.length + finishedTasksArr.length;// common count arrays
-          let maxWidthFinished = (finishedTasksArr.length * 100) / sumOfLengthes; 
-          let maxWidthUnfinished = (unfinishedTasksArr.length * 100) / sumOfLengthes;
-          let sumOfMaxWidth = maxWidthFinished + maxWidthUnfinished ;//100%
-      
-          console.log('sumOfMaxWidth', sumOfMaxWidth);
-          console.log('sumOfLengthes',sumOfLengthes);
-          console.log('maxWidthFinished', maxWidthFinished);
-          console.log('maxWidthUnfinished', maxWidthUnfinished);
-      
-          let elem = document.getElementById('blue');
-          let width = finishedTasksArr.length ; // элементы в списке дел
-          let styleMaxWidth = document.getElementById('progres-blue');
-          width = Math.ceil(width);
-          
-          let id = setInterval(frame, 16);
-     
-              function frame(){
-                  if (width >= sumOfMaxWidth) {
-                      clearInterval (id);
-                      elem.style.width = maxWidthFinished + '%';
-                
-                  } else {
-                    clearInterval (id);
-                      elem.style.width = maxWidthFinished + '%';
-                  }
+      let filter = todoStorageArray.filter(function(todoInstance){return todoInstance.status === true}).length;
+      let unfilter = todoStorageArray.filter(function(todoInstance){return todoInstance.status === false}).length;
+      let sumOfLengthes = todoStorageArray.length;// common count arrays
+      let maxWidthFinished = (filter * 100) / sumOfLengthes; 
+      let maxWidthUnfinished = (unfilter * 100) / sumOfLengthes;
+      let sumOfMaxWidth = maxWidthFinished + maxWidthUnfinished ;//100%
+    
+      console.log('finishedTasksArr.length', filter);
+      console.log('sumOfMaxWidth', sumOfMaxWidth);
+      console.log('sumOfLengthes',sumOfLengthes);
+      console.log('maxWidthFinished', maxWidthFinished);
+      console.log('maxWidthUnfinished', maxWidthUnfinished);
+
+      let elem = document.getElementById('blue');
+      let width = filter ; // элементы в списке дел
+      let styleMaxWidth = document.getElementById('progres-blue');
+      width = Math.ceil(width);
+
+      let id = setInterval(frame, 16);
+
+          function frame(){
+              if (width >= sumOfMaxWidth) {
+                  clearInterval (id);
+                  elem.style.width = maxWidthFinished + '%'; 
+            
+              } else {
+                clearInterval (id);
+                elem.style.width = maxWidthFinished + '%';
+                  
               }
-    }
+        
+          }
+  }
       
     function TodoListObj(text) {
       this.task = text;
@@ -178,35 +198,40 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
         }
     });
 
-    // //удаление таска
-    // function deleteTask() {
-    //     let listItem = this.parentNode;
-    //     let ul = listItem.parentNode;
-    //     ul.removeChild(listItem);
-    //     saveToLocalStorage();
-    // }
-
     function saveToLocalStorage() {
       localStorage.setItem('todoStorage', JSON.stringify(todoStorageArray));
+    
     }
 
     //редактирование тасков
     function editTask(liItem, cancleText, saveText) {
         saveText.onclick = function (event) {
           event.srcElement.previousSibling.previousSibling.innerText = event.srcElement.previousSibling.value;
+          let newtask = event.srcElement.previousSibling.previousSibling.innerText;
+          console.log('task', event.srcElement.previousSibling.previousSibling.innerText);
+          console.log('massiv',todoStorageArray); 
+          let editText = todoStorageArray.find(edtext => edtext.id === event.path[1].id);
+          editText.task = newtask;
+
           liItem.classList.toggle('editMode');
           saveToLocalStorage();
-        };
+      
+        };  
 
         cancleText.onclick = function() {
-          liItem.classList.toggle('editMode');
+        liItem.classList.toggle('editMode');
+        
         };
 
         liItem.addEventListener('dblclick', function (e) {
             liItem.classList.toggle('editMode');     
         });
+        progresbarOne();
+        progresbarTwo();
+      
     }
 
+  
     
     
     // загрузка данных
@@ -228,6 +253,8 @@ document.addEventListener('DOMContentLoaded', function(DOMContentLoaded){
 
       progresbarOne();
       progresbarTwo();
+      
+      
     }
 
     load();
